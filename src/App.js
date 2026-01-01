@@ -52,7 +52,7 @@ function AppRoutes() {
       <Box sx={{ position: 'relative', zIndex: 10 }}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/student-information-form/login" element={<LoginPage />} />
+          <Route path="/student-information-form/admin/login" element={<LoginPage />} />
           <Route path="/student-information-form" element={<FormPage />} />
           
           {/* Admin Routes (Protected) */}
