@@ -1,18 +1,14 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Box } from '@mui/material';
 import { LanguageProvider } from './contexts/LanguageContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
 import BackgroundDesign from './components/BackgroundDesign';
-import ProtectedRoute from './components/ProtectedRoute';
-import FormPage from './pages/FormPage';
-import LoginPage from './pages/LoginPage';
-import AdminDashboard from './pages/student-information-form/admin/AdminDashboard';
-import UserManagement from './pages/student-information-form/admin/UserManagement';
-import SubmissionManagement from './pages/student-information-form/admin/SubmissionManagement';
-import AdminSetup from './pages/student-information-form/admin/AdminSetup';
+import PublicRoutes from './routes/PublicRoutes';
+import AdminRoutes from './routes/AdminRoutes';
+import NotFound from './pages/NotFound';
 import { createAdminUser, getUserByEmail } from './services/firestoreService';
 import './App.css';
 
@@ -43,54 +39,18 @@ const InitializeAdmin = () => {
 };
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   return (
     <Box sx={{ minHeight: '100vh', position: 'relative' }}>
       <BackgroundDesign />
-      {isAuthenticated && <Header />}
+      <Header />
       <Box sx={{ position: 'relative', zIndex: 10 }}>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/student-information-form/admin/login" element={<LoginPage />} />
-          <Route path="/student-information-form" element={<FormPage />} />
-          
-          {/* Admin Routes (Protected) */}
-          <Route
-            path="/student-information-form/admin/dashboard"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student-information-form/admin/setup"
-            element={
-              <ProtectedRoute requiredRole="superadmin">
-                <AdminSetup />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student-information-form/admin/users"
-            element={
-              <ProtectedRoute requiredRole="superadmin">
-                <UserManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student-information-form/admin/submissions"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <SubmissionManagement />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Redirect unknown routes */}
-          <Route path="*" element={<Navigate to="/student-information-form" replace />} />
+          {PublicRoutes}
+          {AdminRoutes}
+          {/* Catch-all route for 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Box>
     </Box>
@@ -102,7 +62,7 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Router>
+          <Router basename="/std-2nd-year">
             <InitializeAdmin />
             <AppRoutes />
           </Router>

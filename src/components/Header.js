@@ -1,9 +1,26 @@
-import React from 'react';
+// import React, { useEffect } from 'react';
 import { Box, Container, Typography, Button } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const { language, toggleLanguage } = useLanguage();
+  const { logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate('/student-information-form/admin/login');
+  };
+
+  // Hide header only on login page
+  const isLoginPage = location.pathname === '/student-information-form/admin/login';
+  if (isLoginPage) {
+    return null;
+  }
 
   return (
     <Box 
@@ -52,13 +69,16 @@ const Header = () => {
               }}
             >
               <img 
-                src="/BigCircularLogo.jpg" 
+                src={`${process.env.PUBLIC_URL}/BigCircularLogo.jpg`}
                 alt="University of Chittagong Logo"
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
                   borderRadius: '50%'
+                }}
+                onError={(e) => {
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="50" fill="%23001f3f"/%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="white" font-size="40" font-weight="bold"%3EUC%3C/text%3E%3C/svg%3E';
                 }}
               />
             </Box>
@@ -88,23 +108,42 @@ const Header = () => {
             </Box>
           </Box>
 
-          {/* Language Toggle */}
-          <Button 
-            variant="outlined" 
-            onClick={toggleLanguage}
-            sx={{
-              borderColor: 'rgba(255, 255, 255, 0.5)',
-              color: 'white',
-              '&:hover': {
-                borderColor: 'white',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              },
-              fontSize: { xs: '12px', sm: '14px' },
-              padding: { xs: '6px 12px', sm: '8px 16px' }
-            }}
-          >
-            {language === 'en' ? '🇧🇩 বাংলা' : '🇬🇧 English'}
-          </Button>
+          {/* Language Toggle and Logout */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button 
+              variant="outlined" 
+              onClick={toggleLanguage}
+              sx={{
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                },
+                fontSize: { xs: '12px', sm: '14px' },
+                padding: { xs: '6px 12px', sm: '8px 16px' }
+              }}
+            >
+              {language === 'en' ? '🇧🇩 বাংলা' : '🇬🇧 English'}
+            </Button>
+            {isAuthenticated && (
+              <Button 
+                variant="contained" 
+                onClick={handleLogout}
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                  },
+                  fontSize: { xs: '12px', sm: '14px' },
+                  padding: { xs: '6px 12px', sm: '8px 16px' }
+                }}
+              >
+                Logout
+              </Button>
+            )}
+          </Box>
         </Box>
       </Container>
     </Box>
