@@ -1,10 +1,8 @@
 import React from 'react';
-import {
-  Box,
-  TextField,
-  Typography,
-  InputAdornment
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
 const PersonalInformation = ({
   t, 
   language,
@@ -89,30 +87,31 @@ const PersonalInformation = ({
         {/* Student ID and Phone Number Row */}
         <Box sx={{ display: 'flex', gap: { xs: 2, sm: 2, md: 3 }, flexDirection: { xs: 'column', md: 'row' } }}>
           {/* Student ID */}
-          <TextField
-            fullWidth
-            label={t('studentId')}
-            name="studentId"
-            value={formData.studentId}
-            onChange={onInputChange}
-            error={!!errors.studentId}
-            helperText={errors.studentId}
-            disabled={loading}
-            required
-            inputProps={{ inputMode: 'numeric' }}
-            variant="outlined"
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#001f3f'
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#003d7a'
+          <Box sx={{ flex: 1 }}>
+            <TextField
+              fullWidth
+              label={t('studentId')}
+              name="studentId"
+              value={formData.studentId}
+              onChange={onInputChange}
+              error={!!errors.studentId}
+              helperText={errors.studentId}
+              disabled={loading}
+              required
+              inputProps={{ inputMode: 'numeric' }}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#001f3f'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#003d7a'
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </Box>
 
           {/* Phone Number */}
           <TextField
@@ -142,53 +141,33 @@ const PersonalInformation = ({
           />
         </Box>
 
-        {/* Primary Email and Alias Email Row */}
-        <Box sx={{ display: 'flex', gap: { xs: 2, sm: 2, md: 3 }, flexDirection: { xs: 'column', md: 'row' } }}>
-          {/* Primary Email */}
-          <Box sx={{ flex: 1 }}>
-            <TextField
-              fullWidth
-              label={t('primaryEmail')}
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={onInputChange}
-              error={!!errors.email}
-              helperText={errors.email}
-              disabled={loading}
-              required
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': {
-                    borderColor: '#001f3f'
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#003d7a'
-                  }
-                }
-              }}
-            />
+        
             <Box sx={{
-              background: 'rgba(0, 61, 122, 0.05)',
-              border: '1px solid rgba(0, 61, 122, 0.2)',
+              background: 'rgba(76, 175, 80, 0.05)',
+              border: '1px solid rgba(76, 175, 80, 0.3)',
               borderRadius: '8px',
+              width: '100%',
               p: 1.5,
-              mt: 1
+              mt: 1,
+              textAlign: 'center'
             }}>
               <Typography 
                 variant="caption" 
                 sx={{
-                  color: '#003d7a',
-                  fontSize: { xs: '11px', sm: '12px' },
-                  lineHeight: '1.5'
+                  color: '#2e7d32',
+                  fontSize: { xs: '13px', sm: '18px' },
+                  lineHeight: '1.5',
+                  fontWeight: '500',
                 }}
               >
-                {t('emailWarningFormal')}
+                {language === 'en' 
+                  ? `Your institutional email will be: ${formData.studentId || 'XXXXXXXX'}@std.cu.ac.bd` 
+                  : `আপনার প্রাতিষ্ঠানিক ইমেল হবে: ${formData.studentId || 'XXXXXXXX'}@std.cu.ac.bd`}
               </Typography>
             </Box>
-          </Box>
 
+        {/* Alias Email and Personal Email Row */}
+        <Box sx={{ display: 'flex', gap: { xs: 2, sm: 2, md: 3 }, flexDirection: { xs: 'column', md: 'row' } }}>
           {/* Alias Email */}
           <Box sx={{ flex: 1 }}>
             <TextField
@@ -239,6 +218,51 @@ const PersonalInformation = ({
                 {language === 'en' 
                   ? 'Your alias email will be provided based on availability. Use 2-30 characters: letters, numbers, dots, hyphens or underscores. Do not use personal email patterns like gmail, yahoo, etc.' 
                   : 'আপনার উপনাম ইমেল প্রাপ্যতার ভিত্তিতে প্রদান করা হবে। ২-৩০ অক্ষর ব্যবহার করুন: অক্ষর, সংখ্যা, ডট, হাইফেন বা আন্ডারস্কোর। Gmail, Yahoo এর মতো ব্যক্তিগত ইমেল প্যাটার্ন ব্যবহার করবেন না।'}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Personal Email */}
+          <Box sx={{ flex: 1 }}>
+            <TextField
+              fullWidth
+              label={t('primaryEmail')}
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={onInputChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              disabled={loading}
+              required
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#001f3f'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#003d7a'
+                  }
+                }
+              }}
+            />
+            <Box sx={{
+              background: 'rgba(0, 61, 122, 0.05)',
+              border: '1px solid rgba(0, 61, 122, 0.2)',
+              borderRadius: '8px',
+              p: 1.5,
+              mt: 1
+            }}>
+              <Typography 
+                variant="caption" 
+                sx={{
+                  color: '#003d7a',
+                  fontSize: { xs: '11px', sm: '12px' },
+                  lineHeight: '1.5'
+                }}
+              >
+                {t('emailWarningFormal')}
               </Typography>
             </Box>
           </Box>

@@ -1,5 +1,8 @@
 import React from 'react';
-import { Box, Container, Typography, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
@@ -60,7 +63,7 @@ const NotFound = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate('/student-information-form')}
+            onClick={() => navigate('/')}
           >
             Go to Form
           </Button>

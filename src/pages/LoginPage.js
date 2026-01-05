@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Paper,
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import LockIcon from '@mui/icons-material/Lock';
 import Swal from 'sweetalert2';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,7 +39,7 @@ const LoginPage = () => {
         timer: 2000,
         confirmButtonColor: '#001f3f'
       });
-      navigate('/student-information-form/admin/dashboard');
+      navigate('/admin/dashboard');
     } else {
       setError(result.error);
     }

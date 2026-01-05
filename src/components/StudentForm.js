@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import {
-  Box,
-  Container,
-  Button,
-  Paper,
-  Typography,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Swal from 'sweetalert2';
 import { useLanguage } from '../hooks/useLanguage';

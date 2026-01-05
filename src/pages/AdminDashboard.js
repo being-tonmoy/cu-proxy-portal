@@ -1,31 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Chip,
-  IconButton,
-  Tooltip,
-  Alert
-} from '@mui/material';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Alert from '@mui/material/Alert';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -85,7 +83,7 @@ const AdminDashboard = () => {
 
     if (result.isConfirmed) {
       try {
-        await deleteStudentSubmission(submission.studentId, submission.faculty, submission.department);
+        await deleteStudentSubmission(submission.studentId, submission.facultyAlias, submission.department);
         setSubmissions(submissions.filter(s => s.id !== submission.id));
         Swal.fire({
           icon: 'success',
@@ -106,7 +104,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/student-information-form/login');
+    navigate('/admin/login');
   };
 
   const stats = {
@@ -147,21 +145,21 @@ const AdminDashboard = () => {
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
-              onClick={() => navigate('/student-information-form/admin/setup')}
+              onClick={() => navigate('/admin/setup')}
               sx={{ borderColor: '#003d7a', color: '#003d7a', fontWeight: 'bold' }}
             >
               Setup
             </Button>
             <Button
               variant="outlined"
-              onClick={() => navigate('/student-information-form/admin/submissions')}
+              onClick={() => navigate('/admin/submissions')}
               sx={{ borderColor: '#003d7a', color: '#003d7a', fontWeight: 'bold' }}
             >
               Manage Submissions
             </Button>
             <Button
               variant="outlined"
-              onClick={() => navigate('/student-information-form/admin/users')}
+              onClick={() => navigate('/admin/users')}
               sx={{ borderColor: '#003d7a', color: '#003d7a', fontWeight: 'bold' }}
             >
               Manage Users
@@ -315,12 +313,16 @@ const AdminDashboard = () => {
               <Table>
                 <TableHead sx={{ bgcolor: '#001f3f' }}>
                   <TableRow sx={{ background: '#001f3f' }}>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>ID</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Student ID</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Name</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Faculty</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Department</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Personal Email</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Institutional Email</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Phone</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Session</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Year/Semester</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Submitted</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>
                       Actions
                     </TableCell>
@@ -329,14 +331,24 @@ const AdminDashboard = () => {
                 <TableBody>
                   {submissions.map((submission) => (
                     <TableRow key={submission.id} hover>
-                      <TableCell>{submission.studentId}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ fontSize: '13px' }}>{submission.studentId}</TableCell>
+                      <TableCell sx={{ fontSize: '13px' }}>
                         {submission.firstName} {submission.lastName}
                       </TableCell>
-                      <TableCell>{submission.faculty}</TableCell>
-                      <TableCell>{submission.department}</TableCell>
+                      <TableCell sx={{ fontSize: '13px' }}>{submission.faculty}</TableCell>
+                      <TableCell sx={{ fontSize: '13px' }}>{submission.department}</TableCell>
                       <TableCell sx={{ fontSize: '12px' }}>{submission.email}</TableCell>
-                      <TableCell>{submission.session}</TableCell>
+                      <TableCell sx={{ fontSize: '12px' }}>
+                        {submission.aliasEmail}@std.cu.ac.bd
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '12px' }}>{submission.phoneNumber}</TableCell>
+                      <TableCell sx={{ fontSize: '13px' }}>{submission.session}</TableCell>
+                      <TableCell sx={{ fontSize: '12px' }}>
+                        {submission.yearSemesterType === 'year' ? 'Year' : 'Semester'} {submission.yearSemesterValue}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '11px' }}>
+                        {submission.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
+                      </TableCell>
                       <TableCell align="center">
                         <Tooltip title="View Details">
                           <IconButton
@@ -367,84 +379,170 @@ const AdminDashboard = () => {
       </Container>
 
       {/* View Submission Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: '#001f3f', fontWeight: 'bold' }}>
-          Submission Details
+      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ color: '#001f3f', fontWeight: 'bold', backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
+          Submission Details - {selectedSubmission?.firstName} {selectedSubmission?.lastName}
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ py: 3 }}>
           {selectedSubmission && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Personal Information Section */}
               <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Full Name
+                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #0288d1' }}>
+                  Personal Information
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.firstName} {selectedSubmission.lastName}
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        First Name
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.firstName}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Last Name
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.lastName}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Student ID
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                        {selectedSubmission.studentId}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Phone Number
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.phoneNumber}</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
+
+              {/* Contact Information Section */}
               <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Student ID
+                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #00897b' }}>
+                  Contact Information
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.studentId}
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Email Address
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.email}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Institutional Email
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', backgroundColor: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
+                        {selectedSubmission.aliasEmail}@std.cu.ac.bd
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
+
+              {/* Academic Information Section */}
               <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Email
+                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #6a1b9a' }}>
+                  Academic Information
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.email}
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Faculty
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.faculty}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Department
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.department}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Session
+                      </Typography>
+                      <Typography variant="body2">{selectedSubmission.session}</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Year / Semester
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedSubmission.yearSemesterType === 'year' ? 'Year' : 'Semester'} - {selectedSubmission.yearSemesterValue}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
+
+              {/* Additional Information Section */}
               <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Alias Email
+                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #ff6f00' }}>
+                  Additional Information
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.aliasEmail}@std.cu.ac.bd
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Faculty / Department
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.faculty} / {selectedSubmission.department}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Phone
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.phoneNumber}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Year/Semester
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.yearSemesterType === 'year' ? 'Year' : 'Semester'} -{' '}
-                  {selectedSubmission.yearSemesterValue}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  Submitted At
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {selectedSubmission.createdAt?.toDate?.().toLocaleString() ||
-                    'N/A'}
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Terms Agreed
+                      </Typography>
+                      <Chip
+                        label={selectedSubmission.agreeToTerms ? 'Yes' : 'No'}
+                        color={selectedSubmission.agreeToTerms ? 'success' : 'error'}
+                        variant="outlined"
+                        size="small"
+                      />
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                        Submitted At
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedSubmission.createdAt?.toDate?.().toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+        <DialogActions sx={{ borderTop: '1px solid #e0e0e0', padding: 2 }}>
+          <Button onClick={() => setViewDialogOpen(false)} variant="contained" sx={{ backgroundColor: '#001f3f' }}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </>

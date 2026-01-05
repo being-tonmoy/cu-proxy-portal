@@ -1,33 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Grid
-} from '@mui/material';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Grid from '@mui/material/Grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
@@ -148,14 +146,17 @@ const SubmissionManagement = () => {
       setLoading(true);
       await updateSubmission(
         editingSubmission.studentId,
-        editingSubmission.faculty,
+        editingSubmission.facultyAlias,
         editingSubmission.department,
         {
           firstName: editFormData.firstName,
           lastName: editFormData.lastName,
           email: editFormData.email,
           phoneNumber: editFormData.phoneNumber,
-          session: editFormData.session
+          aliasEmail: editFormData.aliasEmail,
+          session: editFormData.session,
+          yearSemesterType: editFormData.yearSemesterType,
+          yearSemesterValue: editFormData.yearSemesterValue
         }
       );
       Swal.fire({
@@ -194,7 +195,7 @@ const SubmissionManagement = () => {
     if (result.isConfirmed) {
       try {
         setLoading(true);
-        await deleteStudentSubmission(submission.studentId, submission.faculty, submission.department);
+        await deleteStudentSubmission(submission.studentId, submission.facultyAlias, submission.department);
         Swal.fire({
           icon: 'success',
           title: 'Deleted',
@@ -284,7 +285,7 @@ const SubmissionManagement = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/student-information-form/login');
+    navigate('/admin/login');
   };
 
   const departmentOptions = (() => {
@@ -346,7 +347,7 @@ const SubmissionManagement = () => {
 
         {/* Filters */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
+          <Grid container spacing={2} alignItems="flex-start">
             <Grid item xs={12} sm={12} md={3}>
               <TextField
                 fullWidth
@@ -360,16 +361,25 @@ const SubmissionManagement = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={2.5}>
+            <Grid item xs={12} sm={6} md={3}>
               <FormControl fullWidth size="small">
-                <InputLabel>Faculty</InputLabel>
+                <InputLabel id="faculty-select-label">Faculty</InputLabel>
                 <Select
+                  labelId="faculty-select-label"
+                  id="faculty-select"
                   value={filterFaculty}
                   onChange={(e) => {
                     setFilterFaculty(e.target.value);
                     setFilterDepartment('');
                   }}
                   label="Faculty"
+                  sx={{
+                    width: '100%',
+                    minWidth: '200px',
+                    '& .MuiOutlinedInput-input': {
+                      padding: '10px 14px'
+                    }
+                  }}
                 >
                   <MenuItem value="">All Faculties</MenuItem>
                   {Object.entries(facultyData).map(([alias, info]) => (
@@ -380,13 +390,22 @@ const SubmissionManagement = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6} md={2.5}>
+            <Grid item xs={12} sm={6} md={3}>
               <FormControl fullWidth size="small" disabled={!filterFaculty}>
-                <InputLabel>Department</InputLabel>
+                <InputLabel id="department-select-label">Department</InputLabel>
                 <Select
+                  labelId="department-select-label"
+                  id="department-select"
                   value={filterDepartment}
                   onChange={(e) => setFilterDepartment(e.target.value)}
                   label="Department"
+                  sx={{
+                    width: '100%',
+                    minWidth: '200px',
+                    '& .MuiOutlinedInput-input': {
+                      padding: '10px 14px'
+                    }
+                  }}
                 >
                   <MenuItem value="">All Departments</MenuItem>
                   {departmentOptions.map((dept) => (
@@ -397,8 +416,8 @@ const SubmissionManagement = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={12} md={3.5}>
-              <Box sx={{ p: 1, bgcolor: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
+            <Grid item xs={12} sm={12} md={3}>
+              <Box sx={{ p: 1, bgcolor: '#f5f5f5', borderRadius: '4px', textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography variant="body2" sx={{ color: '#666', fontWeight: 'bold' }}>
                   {filteredSubmissions.length} submissions found
                 </Typography>
@@ -513,39 +532,103 @@ const SubmissionManagement = () => {
           <DialogTitle sx={{ bgcolor: '#001f3f', color: 'white', fontWeight: 'bold' }}>
             Edit Submission
           </DialogTitle>
-          <DialogContent sx={{ pt: 6 }}>
+          <DialogContent sx={{ pt: 2 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Student ID - Read Only */}
               <TextField
-                label="First Name"
+                label="Student ID"
                 fullWidth
-                value={editFormData.firstName || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                value={editFormData.studentId || ''}
+                disabled
+                InputProps={{ readOnly: true }}
               />
+              
+              {/* First Name and Last Name Row */}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="First Name"
+                  fullWidth
+                  value={editFormData.firstName || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                />
+                <TextField
+                  label="Last Name"
+                  fullWidth
+                  value={editFormData.lastName || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                />
+              </Box>
+
+              {/* Faculty and Department - Read Only */}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Faculty"
+                  fullWidth
+                  value={editFormData.faculty || ''}
+                  disabled
+                  InputProps={{ readOnly: true }}
+                />
+                <TextField
+                  label="Department"
+                  fullWidth
+                  value={editFormData.department || ''}
+                  disabled
+                  InputProps={{ readOnly: true }}
+                />
+              </Box>
+
+              {/* Email and Phone Row */}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Personal Email"
+                  type="email"
+                  fullWidth
+                  value={editFormData.email || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                />
+                <TextField
+                  label="Phone"
+                  fullWidth
+                  value={editFormData.phoneNumber || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
+                />
+              </Box>
+
+              {/* Alias Email */}
               <TextField
-                label="Last Name"
+                label="Alias Email (Student Email)"
                 fullWidth
-                value={editFormData.lastName || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                value={editFormData.aliasEmail || ''}
+                onChange={(e) => setEditFormData({ ...editFormData, aliasEmail: e.target.value })}
               />
-              <TextField
-                label="Email"
-                type="email"
-                fullWidth
-                value={editFormData.email || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-              />
-              <TextField
-                label="Phone"
-                fullWidth
-                value={editFormData.phoneNumber || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
-              />
+
+              {/* Session */}
               <TextField
                 label="Session"
                 fullWidth
                 value={editFormData.session || ''}
                 onChange={(e) => setEditFormData({ ...editFormData, session: e.target.value })}
               />
+
+              {/* Year/Semester Type and Value Row */}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="Year/Semester Type"
+                  fullWidth
+                  value={editFormData.yearSemesterType || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, yearSemesterType: e.target.value })}
+                  select
+                >
+                  <MenuItem value="year">Year</MenuItem>
+                  <MenuItem value="semester">Semester</MenuItem>
+                </TextField>
+                <TextField
+                  label="Year/Semester Value"
+                  fullWidth
+                  value={editFormData.yearSemesterValue || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, yearSemesterValue: e.target.value })}
+                />
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>

@@ -1,15 +1,15 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
-import AdminDashboard from '../pages/student-information-form/admin/AdminDashboard';
-import AdminSetup from '../pages/student-information-form/admin/AdminSetup';
-import UserManagement from '../pages/student-information-form/admin/UserManagement';
-import SubmissionManagement from '../pages/student-information-form/admin/SubmissionManagement';
+import AdminDashboard from '../pages/AdminDashboard';
+import AdminSetup from '../pages/AdminSetup';
+import UserManagement from '../pages/UserManagement';
+import SubmissionManagement from '../pages/SubmissionManagement';
 
 const adminRoutes = [
   <Route
     key="dashboard"
-    path="/student-information-form/admin/dashboard"
+    path="/admin/dashboard"
     element={
       <ProtectedRoute requiredRole="admin">
         <AdminDashboard />
@@ -18,7 +18,7 @@ const adminRoutes = [
   />,
   <Route
     key="setup"
-    path="/student-information-form/admin/setup"
+    path="/admin/setup"
     element={
       <ProtectedRoute requiredRole="superadmin">
         <AdminSetup />
@@ -27,7 +27,7 @@ const adminRoutes = [
   />,
   <Route
     key="users"
-    path="/student-information-form/admin/users"
+    path="/admin/users"
     element={
       <ProtectedRoute requiredRole="superadmin">
         <UserManagement />
@@ -36,7 +36,7 @@ const adminRoutes = [
   />,
   <Route
     key="submissions"
-    path="/student-information-form/admin/submissions"
+    path="/admin/submissions"
     element={
       <ProtectedRoute requiredRole="admin">
         <SubmissionManagement />

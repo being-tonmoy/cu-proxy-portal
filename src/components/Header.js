@@ -1,5 +1,8 @@
 // import React, { useEffect } from 'react';
-import { Box, Container, Typography, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,11 +16,11 @@ const Header = () => {
   // Handle logout
   const handleLogout = () => {
     logout();
-    navigate('/student-information-form/admin/login');
+    navigate('/admin/login');
   };
 
   // Hide header only on login page
-  const isLoginPage = location.pathname === '/student-information-form/admin/login';
+  const isLoginPage = location.pathname === '/admin/login';
   if (isLoginPage) {
     return null;
   }

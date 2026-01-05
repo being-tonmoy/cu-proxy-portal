@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Paper,
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DownloadIcon from '@mui/icons-material/Download';
 import Swal from 'sweetalert2';
@@ -135,7 +133,7 @@ const AdminSetup = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/student-information-form/login');
+    navigate('/admin/login');
   };
 
   const parseFacultyData = (text) => {

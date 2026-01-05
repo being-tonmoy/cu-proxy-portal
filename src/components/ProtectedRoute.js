@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ 
@@ -25,11 +26,11 @@ const ProtectedRoute = ({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/student-information-form/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (requiredRole === 'superadmin' && user?.role !== 'superadmin') {
-    return <Navigate to="/student-information-form/admin/dashboard" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return children;

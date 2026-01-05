@@ -568,7 +568,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Allow reads and writes to student-information-form collection
-    match /student-information-form/{document=**} {
+    match /{document=**} {
       allow read, write: if request.auth != null;
     }
   }

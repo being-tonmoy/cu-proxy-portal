@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { Box } from '@mui/material';
+import Box from '@mui/material/Box';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
@@ -11,7 +11,6 @@ import AdminRoutes from './routes/AdminRoutes';
 import NotFound from './pages/NotFound';
 import { createAdminUser, getUserByEmail } from './services/firestoreService';
 import './App.css';
-
 // Component to initialize superadmin user
 const InitializeAdmin = () => {
   useEffect(() => {
@@ -62,7 +61,7 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Router basename="/std-2nd-year">
+          <Router>
             <InitializeAdmin />
             <AppRoutes />
           </Router>

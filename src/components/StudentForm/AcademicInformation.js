@@ -1,17 +1,15 @@
 import React, { useMemo } from 'react';
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Typography,
-  Divider
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormLabel from '@mui/material/FormLabel';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
 
 const AcademicInformation = ({ 
   t, 

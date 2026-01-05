@@ -173,16 +173,17 @@ export const getAllAdminUsers = async () => {
 
 /**
  * Check if a student ID already has a submission
- * Uses a dedicated studentSubmissions collection for efficient duplicate checking
+ * Checks the form-values collection for existing submissions
  * @param {string} studentId - The student ID to check
  * @returns {Promise<boolean>} - True if submission exists, false otherwise
  */
 export const checkDuplicateSubmission = async (studentId) => {
   try {
-    // Check in the dedicated studentSubmissions collection
-    const submissionsRef = doc(db, 'student-information-form', 'studentSubmissions', 'submissions', studentId);
-    const docSnap = await getDoc(submissionsRef);
-    return docSnap.exists();
+    // Query the form-values collection using collectionGroup
+    const submissionsRef = collectionGroup(db, 'submissions');
+    const q = query(submissionsRef, where('studentId', '==', studentId));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
   } catch (error) {
     console.error('Error checking duplicate submission:', error);
     // If there's an error, we'll allow the submission to proceed
@@ -247,20 +248,6 @@ export const saveStudentForm = async (formData, facultyData) => {
 
     // Set the form data
     await setDoc(studentDocRef, formDataDocument);
-
-    // Also record this submission in the studentSubmissions collection for duplicate checking
-    try {
-      const submissionsRef = doc(db, 'student-information-form', 'studentSubmissions', 'submissions', studentId);
-      await setDoc(submissionsRef, {
-        studentId,
-        faculty: facultyAlias,
-        department,
-        submittedAt: Timestamp.now()
-      }, { merge: true });
-    } catch (error) {
-      console.warn('Warning: Could not record submission in studentSubmissions:', error);
-      // Don't throw - the main submission was successful
-    }
 
     return {
       success: true,
@@ -521,6 +508,8 @@ export const getAllSubmissions = async () => {
  */
 export const deleteStudentSubmission = async (studentId, faculty, department) => {
   try {
+    // faculty could be either full name or alias, we store facultyAlias in the form data
+    // Use the facultyAlias which is already stored in the submission
     const submissionPath = `student-information-form/form-values/${faculty}/${department}/submissions/${studentId}`;
     const docRef = doc(db, submissionPath);
     await deleteDoc(docRef);
