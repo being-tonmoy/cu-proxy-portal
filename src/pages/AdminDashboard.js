@@ -15,33 +15,25 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import CircularProgress from '@mui/material/CircularProgress';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Alert from '@mui/material/Alert';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
 import Swal from 'sweetalert2';
+import { Bar, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip as ChartTooltip, Legend, Filler } from 'chart.js';
 import { useAuth } from '../contexts/AuthContext';
-import { getAllSubmissions, deleteStudentSubmission } from '../services/firestoreService';
+import { getAllSubmissions } from '../services/firestoreService';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, ChartTooltip, Legend, Filler);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [submissions, setSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [facultySortConfig, setFacultySortConfig] = useState({ key: 'count', direction: 'desc' });
+  const [departmentSortConfig, setDepartmentSortConfig] = useState({ key: 'count', direction: 'desc' });
 
   useEffect(() => {
     loadSubmissions();
@@ -49,7 +41,6 @@ const AdminDashboard = () => {
 
   const loadSubmissions = async () => {
     try {
-      setLoading(true);
       const data = await getAllSubmissions();
       setSubmissions(data);
     } catch (error) {
@@ -60,51 +51,79 @@ const AdminDashboard = () => {
         text: 'Failed to load submissions',
         confirmButtonColor: '#001f3f'
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleViewSubmission = (submission) => {
-    setSelectedSubmission(submission);
-    setViewDialogOpen(true);
-  };
-
-  const handleDeleteSubmission = async (submission) => {
-    const result = await Swal.fire({
-      title: 'Delete Submission?',
-      text: `Are you sure you want to delete ${submission.firstName} ${submission.lastName}'s submission?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d32f2f',
-      cancelButtonColor: '#999',
-      confirmButtonText: 'Yes, Delete'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteStudentSubmission(submission.studentId, submission.facultyAlias, submission.department);
-        setSubmissions(submissions.filter(s => s.id !== submission.id));
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted',
-          text: 'Submission deleted successfully',
-          confirmButtonColor: '#001f3f'
-        });
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to delete submission',
-          confirmButtonColor: '#001f3f'
-        });
-      }
     }
   };
 
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
+  };
+
+  const handleFacultySort = (key) => {
+    let direction = 'desc';
+    if (facultySortConfig.key === key && facultySortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setFacultySortConfig({ key, direction });
+  };
+
+  const handleDepartmentSort = (key) => {
+    let direction = 'desc';
+    if (departmentSortConfig.key === key && departmentSortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setDepartmentSortConfig({ key, direction });
+  };
+
+  const sortFacultyData = (data) => {
+    const sorted = [...data].sort((a, b) => {
+      let aVal, bVal, comparison;
+      
+      if (facultySortConfig.key === 'count') {
+        aVal = a[1];
+        bVal = b[1];
+        comparison = aVal - bVal;
+      } else if (facultySortConfig.key === 'percentage') {
+        aVal = a[1] / stats.totalSubmissions;
+        bVal = b[1] / stats.totalSubmissions;
+        comparison = aVal - bVal;
+      } else {
+        aVal = a[0];
+        bVal = b[0];
+        comparison = aVal.localeCompare(bVal);
+      }
+      
+      return facultySortConfig.direction === 'desc' ? -comparison : comparison;
+    });
+    return sorted;
+  };
+
+  const sortDepartmentData = (data) => {
+    const sorted = [...data].sort((a, b) => {
+      let aVal, bVal, comparison;
+      
+      if (departmentSortConfig.key === 'count') {
+        aVal = a[1];
+        bVal = b[1];
+        comparison = aVal - bVal;
+      } else if (departmentSortConfig.key === 'percentage') {
+        aVal = a[1] / stats.totalSubmissions;
+        bVal = b[1] / stats.totalSubmissions;
+        comparison = aVal - bVal;
+      } else {
+        aVal = a[0];
+        bVal = b[0];
+        comparison = aVal.localeCompare(bVal);
+      }
+      
+      return departmentSortConfig.direction === 'desc' ? -comparison : comparison;
+    });
+    return sorted;
+  };
+
+  const getSortIndicator = (column, sortConfig) => {
+    if (sortConfig.key !== column) return ' ↕';
+    return sortConfig.direction === 'desc' ? ' ↓' : ' ↑';
   };
 
   const stats = {
@@ -123,6 +142,17 @@ const AdminDashboard = () => {
     acc[s.department] = (acc[s.department] || 0) + 1;
     return acc;
   }, {});
+
+  // Calculate submissions by date
+  const submissionsByDate = submissions.reduce((acc, s) => {
+    const date = s.createdAt?.toDate?.().toLocaleDateString('en-CA') || 'Unknown';
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Sort dates and get daily submission counts
+  const sortedDates = Object.keys(submissionsByDate).sort();
+  const dateWiseData = sortedDates.map(date => submissionsByDate[date]);
 
   return (
     <>
@@ -250,301 +280,416 @@ const AdminDashboard = () => {
           </Grid>
         </Grid>
 
-        {/* Submissions by Faculty */}
+        {/* Submissions by Faculty - Chart and Table */}
         {Object.keys(submissionsByFaculty).length > 0 && (
           <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
-            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2 }}>
+            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 3 }}>
               Submissions by Faculty
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Object.entries(submissionsByFaculty).map(([faculty, count]) => (
-                <Chip
-                  key={faculty}
-                  label={`${faculty}: ${count}`}
-                  color="primary"
-                  variant="outlined"
-                  sx={{ fontSize: '14px' }}
-                />
-              ))}
+            
+            {/* Bar Chart */}
+            <Box sx={{ mb: 4, maxHeight: '400px', display: 'flex', justifyContent: 'center' }}>
+              <Bar
+                data={{
+                  labels: Object.entries(submissionsByFaculty)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([faculty]) => faculty),
+                  datasets: [
+                    {
+                      label: 'Number of Submissions',
+                      data: Object.entries(submissionsByFaculty)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([, count]) => count),
+                      backgroundColor: [
+                        '#001f3f',
+                        '#0288d1',
+                        '#00897b',
+                        '#6a1b9a',
+                        '#ff6f00',
+                        '#c62828',
+                        '#0097a7',
+                        '#1b5e20'
+                      ],
+                      borderColor: '#001f3f',
+                      borderWidth: 1,
+                      borderRadius: 4
+                    }
+                  ]
+                }}
+                options={{
+                  indexAxis: 'y',
+                  responsive: true,
+                  maintainAspectRatio: true,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top'
+                    },
+                    title: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    x: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1
+                      }
+                    }
+                  }
+                }}
+              />
             </Box>
-          </Paper>
-        )}
 
-        {/* Submissions by Department */}
-        {Object.keys(submissionsByDepartment).length > 0 && (
-          <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
-            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2 }}>
-              Submissions by Department
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {Object.entries(submissionsByDepartment)
-                .sort((a, b) => b[1] - a[1])
-                .map(([department, count]) => (
-                  <Chip
-                    key={department}
-                    label={`${department}: ${count}`}
-                    color="success"
-                    variant="outlined"
-                    sx={{ fontSize: '14px' }}
-                  />
-                ))}
-            </Box>
-          </Paper>
-        )}
-
-        {/* Submissions Table */}
-        <Paper sx={{ borderRadius: '12px', overflow: 'hidden' }}>
-          <Box sx={{ p: 3, borderBottom: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold' }}>
-              All Submissions
-            </Typography>
-          </Box>
-
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : submissions.length === 0 ? (
-            <Alert severity="info" sx={{ m: 2 }}>
-              No submissions yet
-            </Alert>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead sx={{ bgcolor: '#001f3f' }}>
-                  <TableRow sx={{ background: '#001f3f' }}>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Student ID</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Faculty</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Department</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Personal Email</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Institutional Email</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Phone</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Session</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Year/Semester</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>Submitted</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold', color: 'white', backgroundColor: '#001f3f' }}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {submissions.map((submission) => (
-                    <TableRow key={submission.id} hover>
-                      <TableCell sx={{ fontSize: '13px' }}>{submission.studentId}</TableCell>
-                      <TableCell sx={{ fontSize: '13px' }}>
-                        {submission.firstName} {submission.lastName}
+            {/* Faculty Table */}
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" sx={{ color: '#666', fontWeight: 'bold', mb: 2 }}>
+                Faculty Statistics
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleFacultySort('name')}
+                      >
+                        Faculty Name{getSortIndicator('name', facultySortConfig)}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '13px' }}>{submission.faculty}</TableCell>
-                      <TableCell sx={{ fontSize: '13px' }}>{submission.department}</TableCell>
-                      <TableCell sx={{ fontSize: '12px' }}>{submission.email}</TableCell>
-                      <TableCell sx={{ fontSize: '12px' }}>
-                        {submission.aliasEmail}@std.cu.ac.bd
+                      <TableCell 
+                        align="right" 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleFacultySort('count')}
+                      >
+                        Number of Submissions{getSortIndicator('count', facultySortConfig)}
                       </TableCell>
-                      <TableCell sx={{ fontSize: '12px' }}>{submission.phoneNumber}</TableCell>
-                      <TableCell sx={{ fontSize: '13px' }}>{submission.session}</TableCell>
-                      <TableCell sx={{ fontSize: '12px' }}>
-                        {submission.yearSemesterType === 'year' ? 'Year' : 'Semester'} {submission.yearSemesterValue}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '11px' }}>
-                        {submission.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title="View Details">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewSubmission(submission)}
-                            sx={{ color: '#0288d1' }}
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteSubmission(submission)}
-                            sx={{ color: '#d32f2f' }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell 
+                        align="right" 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleFacultySort('percentage')}
+                      >
+                        Percentage{getSortIndicator('percentage', facultySortConfig)}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Paper>
-      </Container>
-
-      {/* View Submission Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ color: '#001f3f', fontWeight: 'bold', backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
-          Submission Details - {selectedSubmission?.firstName} {selectedSubmission?.lastName}
-        </DialogTitle>
-        <DialogContent dividers sx={{ py: 3 }}>
-          {selectedSubmission && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Personal Information Section */}
-              <Box>
-                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #0288d1' }}>
-                  Personal Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        First Name
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.firstName}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Last Name
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.lastName}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Student ID
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
-                        {selectedSubmission.studentId}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Phone Number
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.phoneNumber}</Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-
-              {/* Contact Information Section */}
-              <Box>
-                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #00897b' }}>
-                  Contact Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Email Address
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.email}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Institutional Email
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', backgroundColor: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
-                        {selectedSubmission.aliasEmail}@std.cu.ac.bd
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-
-              {/* Academic Information Section */}
-              <Box>
-                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #6a1b9a' }}>
-                  Academic Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Faculty
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.faculty}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Department
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.department}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Session
-                      </Typography>
-                      <Typography variant="body2">{selectedSubmission.session}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Year / Semester
-                      </Typography>
-                      <Typography variant="body2">
-                        {selectedSubmission.yearSemesterType === 'year' ? 'Year' : 'Semester'} - {selectedSubmission.yearSemesterValue}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-
-              {/* Additional Information Section */}
-              <Box>
-                <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 2, paddingBottom: 1, borderBottom: '2px solid #ff6f00' }}>
-                  Additional Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Terms Agreed
-                      </Typography>
-                      <Chip
-                        label={selectedSubmission.agreeToTerms ? 'Yes' : 'No'}
-                        color={selectedSubmission.agreeToTerms ? 'success' : 'error'}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
-                        Submitted At
-                      </Typography>
-                      <Typography variant="body2">
-                        {selectedSubmission.createdAt?.toDate?.().toLocaleString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) || 'N/A'}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
+                  </TableHead>
+                  <TableBody>
+                    {sortFacultyData(Object.entries(submissionsByFaculty)).map(([faculty, count]) => (
+                      <TableRow key={faculty} hover>
+                        <TableCell>{faculty}</TableCell>
+                        <TableCell align="right">{count}</TableCell>
+                        <TableCell align="right">
+                          {((count / stats.totalSubmissions) * 100).toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                        {stats.totalSubmissions}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>100%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid #e0e0e0', padding: 2 }}>
-          <Button onClick={() => setViewDialogOpen(false)} variant="contained" sx={{ backgroundColor: '#001f3f' }}>
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </Paper>
+        )}
+
+        {/* Submissions by Department - Chart and Table */}
+        {Object.keys(submissionsByDepartment).length > 0 && (
+          <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
+            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 3 }}>
+              Submissions by Department
+            </Typography>
+            
+            {/* Bar Chart */}
+            <Box sx={{ mb: 4, minHeight: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ width: '100%' }}>
+                <Bar
+                  data={{
+                    labels: Object.entries(submissionsByDepartment)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([dept]) => dept),
+                    datasets: [
+                      {
+                        label: 'Number of Submissions',
+                        data: Object.entries(submissionsByDepartment)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([, count]) => count),
+                        backgroundColor: [
+                          '#001f3f',
+                          '#0288d1',
+                          '#00897b',
+                          '#6a1b9a',
+                          '#ff6f00',
+                          '#c62828',
+                          '#0097a7',
+                          '#1b5e20',
+                          '#1976d2',
+                          '#388e3c',
+                          '#d32f2f',
+                          '#7b1fa2',
+                          '#0277bd',
+                          '#455a64',
+                          '#558b2f',
+                          '#bf360c'
+                        ],
+                        borderColor: '#001f3f',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barThickness: 12,
+                        categoryPercentage: 0.4,
+                        barPercentage: 0.7
+                      }
+                    ]
+                  }}
+                  options={{
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: true,
+                        position: 'top'
+                      },
+                      title: {
+                        display: false
+                      }
+                    },
+                    scales: {
+                      x: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      },
+                      y: {
+                        ticks: {
+                          font: {
+                            size: 13,
+                            weight: 'bold'
+                          },
+                          padding: 5
+                        }
+                      }
+                    }
+                  }}
+                  height={Math.max(400, Object.keys(submissionsByDepartment).length * 20)}
+                />
+              </div>
+            </Box>
+
+            {/* Department Table */}
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" sx={{ color: '#666', fontWeight: 'bold', mb: 2 }}>
+                Department Statistics
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleDepartmentSort('name')}
+                      >
+                        Department Name{getSortIndicator('name', departmentSortConfig)}
+                      </TableCell>
+                      <TableCell 
+                        align="right" 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleDepartmentSort('count')}
+                      >
+                        Number of Submissions{getSortIndicator('count', departmentSortConfig)}
+                      </TableCell>
+                      <TableCell 
+                        align="right" 
+                        sx={{ fontWeight: 'bold', color: '#001f3f', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleDepartmentSort('percentage')}
+                      >
+                        Percentage{getSortIndicator('percentage', departmentSortConfig)}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortDepartmentData(Object.entries(submissionsByDepartment)).map(([department, count]) => (
+                      <TableRow key={department} hover>
+                        <TableCell>{department}</TableCell>
+                        <TableCell align="right">{count}</TableCell>
+                        <TableCell align="right">
+                          {((count / stats.totalSubmissions) * 100).toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                        {stats.totalSubmissions}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>100%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </Paper>
+        )}
+
+        {/* Submissions Timeline - Line Graph */}
+        {sortedDates.length > 0 && (
+          <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
+            <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold', mb: 3 }}>
+              Submissions by Date
+            </Typography>
+            
+            {/* Line Chart */}
+            <Box sx={{ mb: 2, minHeight: '400px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ width: '100%', height: '400px' }}>
+                <Line
+                  data={{
+                    labels: sortedDates,
+                    datasets: [
+                      {
+                        label: 'Daily Submissions',
+                        data: dateWiseData,
+                        borderColor: '#001f3f',
+                        backgroundColor: 'rgba(0, 31, 63, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#0288d1',
+                        pointBorderColor: '#001f3f',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 3,
+                        segment: {
+                          borderDash: [0],
+                        }
+                      }
+                    ]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                          font: {
+                            size: 13,
+                            weight: 'bold'
+                          },
+                          padding: 15
+                        }
+                      },
+                      title: {
+                        display: false
+                      },
+                      tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        borderColor: '#001f3f',
+                        borderWidth: 1,
+                        displayColors: true
+                      }
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          display: true,
+                          color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                          font: {
+                            size: 11
+                          },
+                          maxRotation: 45,
+                          minRotation: 0
+                        }
+                      },
+                      y: {
+                        beginAtZero: true,
+                        grid: {
+                          display: true,
+                          color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                          font: {
+                            size: 12,
+                            weight: 'bold'
+                          },
+                          stepSize: 1
+                        },
+                        title: {
+                          display: true,
+                          text: 'Submissions',
+                          font: {
+                            size: 12,
+                            weight: 'bold'
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </Box>
+
+            {/* Timeline Statistics */}
+            <Box sx={{ mt: 3, p: 2, backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                      Total Days with Submissions
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#001f3f', fontWeight: 'bold' }}>
+                      {sortedDates.length}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                      First Submission Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#0288d1', fontWeight: 'bold' }}>
+                      {sortedDates[0] || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                      Latest Submission Date
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#00897b', fontWeight: 'bold' }}>
+                      {sortedDates[sortedDates.length - 1] || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#666', fontWeight: 'bold' }}>
+                      Avg. Submissions/Day
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#6a1b9a', fontWeight: 'bold' }}>
+                      {sortedDates.length > 0 ? (stats.totalSubmissions / sortedDates.length).toFixed(1) : 0}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Paper>
+        )}
+
+      </Container>
     </>
   );
 };

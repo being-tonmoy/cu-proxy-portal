@@ -14,6 +14,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import TablePagination from '@mui/material/TablePagination';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -26,6 +27,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Grid from '@mui/material/Grid';
+import Checkbox from '@mui/material/Checkbox';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
@@ -55,6 +57,9 @@ const SubmissionManagement = () => {
   const [facultyData, setFacultyData] = useState({});
   const [filterFaculty, setFilterFaculty] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedRows, setSelectedRows] = useState(new Set());
 
   useEffect(() => {
     loadSubmissions();
@@ -219,7 +224,13 @@ const SubmissionManagement = () => {
   };
 
   const downloadCSV = () => {
-    if (filteredSubmissions.length === 0) {
+    let dataToExport = filteredSubmissions;
+    
+    if (selectedRows.size > 0) {
+      dataToExport = filteredSubmissions.filter(sub => selectedRows.has(sub.id));
+    }
+
+    if (dataToExport.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'No Data',
@@ -243,7 +254,7 @@ const SubmissionManagement = () => {
       'Submitted Date'
     ];
 
-    const data = filteredSubmissions.map(sub => [
+    const data = dataToExport.map(sub => [
       sub.studentId,
       sub.firstName,
       sub.lastName,
@@ -277,7 +288,7 @@ const SubmissionManagement = () => {
     Swal.fire({
       icon: 'success',
       title: 'Downloaded',
-      text: `${filteredSubmissions.length} submissions exported to CSV`,
+      text: `${dataToExport.length} submission(s) exported to CSV`,
       timer: 2000,
       confirmButtonColor: '#001f3f'
     });
@@ -286,6 +297,87 @@ const SubmissionManagement = () => {
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleSelectRow = (submissionId) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(submissionId)) {
+      newSelected.delete(submissionId);
+    } else {
+      newSelected.add(submissionId);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAllRows = (event) => {
+    if (event.target.checked) {
+      const newSelected = new Set(filteredSubmissions.map(sub => sub.id));
+      setSelectedRows(newSelected);
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.size === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Selection',
+        text: 'Please select at least one submission to delete',
+        confirmButtonColor: '#001f3f'
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: 'Confirm Delete',
+      text: `Are you sure you want to delete ${selectedRows.size} submission(s)?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d32f2f',
+      cancelButtonColor: '#757575',
+      confirmButtonText: 'Delete'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setLoading(true);
+        const selectedSubmissions = filteredSubmissions.filter(sub => selectedRows.has(sub.id));
+        
+        for (const submission of selectedSubmissions) {
+          await deleteStudentSubmission(submission.studentId, submission.facultyAlias, submission.department);
+        }
+
+        setSelectedRows(new Set());
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted',
+          text: `${selectedSubmissions.length} submission(s) deleted successfully`,
+          timer: 2000,
+          confirmButtonColor: '#001f3f'
+        });
+        await loadSubmissions();
+      } catch (error) {
+        console.error('Error deleting submissions:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to delete some submissions',
+          confirmButtonColor: '#001f3f'
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const departmentOptions = (() => {
@@ -344,6 +436,32 @@ const SubmissionManagement = () => {
             </Button>
           </Box>
         </Box>
+
+        {/* Selection Info Bar */}
+        {selectedRows.size > 0 && (
+          <Paper sx={{ p: 2, mb: 3, bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+              {selectedRows.size} row(s) selected
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={handleDeleteSelected}
+              >
+                Delete Selected
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setSelectedRows(new Set())}
+              >
+                Clear Selection
+              </Button>
+            </Box>
+          </Paper>
+        )}
 
         {/* Filters */}
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -432,99 +550,135 @@ const SubmissionManagement = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead sx={{ bgcolor: '#001f3f' }}>
-                <TableRow>
-                  {getTableHeaders().map((header) => (
-                    <TableCell
-                      key={header.id}
+          <>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead sx={{ bgcolor: '#001f3f' }}>
+                  <TableRow>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold', backgroundColor: '#001f3f', width: '50px' }}>
+                      <Checkbox
+                        indeterminate={selectedRows.size > 0 && selectedRows.size < filteredSubmissions.length}
+                        checked={filteredSubmissions.length > 0 && selectedRows.size === filteredSubmissions.length}
+                        onChange={handleSelectAllRows}
+                        sx={{ color: 'white', '&.Mui-checked': { color: 'white' } }}
+                      />
+                    </TableCell>
+                    {getTableHeaders().map((header) => (
+                      <TableCell
+                        key={header.id}
+                        sx={{ 
+                          color: 'white', 
+                          fontWeight: 'bold',
+                          backgroundColor: '#001f3f'
+                        }}
+                        sortDirection={orderBy === header.id ? order : false}
+                      >
+                        <TableSortLabel
+                          active={orderBy === header.id}
+                          direction={orderBy === header.id ? order : 'asc'}
+                          onClick={() => handleRequestSort(header.id)}
+                          sx={{
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            '& .MuiTableSortLabel-icon': { 
+                              color: 'white !important'
+                            },
+                            '&.Mui-active': {
+                              color: 'white'
+                            }
+                          }}
+                        >
+                          {header.label}
+                        </TableSortLabel>
+                      </TableCell>
+                    ))}
+                    <TableCell 
                       sx={{ 
                         color: 'white', 
                         fontWeight: 'bold',
                         backgroundColor: '#001f3f'
-                      }}
-                      sortDirection={orderBy === header.id ? order : false}
+                      }} 
+                      align="right"
                     >
-                      <TableSortLabel
-                        active={orderBy === header.id}
-                        direction={orderBy === header.id ? order : 'asc'}
-                        onClick={() => handleRequestSort(header.id)}
-                        sx={{
-                          color: 'white',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          '& .MuiTableSortLabel-icon': { 
-                            color: 'white !important'
-                          },
-                          '&.Mui-active': {
-                            color: 'white'
-                          }
-                        }}
-                      >
-                        {header.label}
-                      </TableSortLabel>
-                    </TableCell>
-                  ))}
-                  <TableCell 
-                    sx={{ 
-                      color: 'white', 
-                      fontWeight: 'bold',
-                      backgroundColor: '#001f3f'
-                    }} 
-                    align="right"
-                  >
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredSubmissions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={getTableHeaders().length + 1} align="center" sx={{ py: 3 }}>
-                      No submissions found
+                      Actions
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredSubmissions.map((submission) => (
-                    <TableRow key={submission.id} hover>
-                      <TableCell>{submission.studentId}</TableCell>
-                      <TableCell>{submission.firstName}</TableCell>
-                      <TableCell>{submission.lastName}</TableCell>
-                      <TableCell>{submission.faculty}</TableCell>
-                      <TableCell>{submission.department}</TableCell>
-                      <TableCell>{submission.email}</TableCell>
-                      <TableCell>{submission.session}</TableCell>
-                      <TableCell>
-                        {new Date(submission.createdAt?.toDate?.() || submission.createdAt).toLocaleString()}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditSubmission(submission)}
-                            sx={{ color: '#1976d2' }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteSubmission(submission)}
-                            sx={{ color: '#d32f2f' }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                </TableHead>
+                <TableBody>
+                  {filteredSubmissions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={getTableHeaders().length + 2} align="center" sx={{ py: 3 }}>
+                        No submissions found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    filteredSubmissions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((submission) => (
+                      <TableRow 
+                        key={submission.id} 
+                        hover
+                        selected={selectedRows.has(submission.id)}
+                        sx={{ 
+                          bgcolor: selectedRows.has(submission.id) ? '#e3f2fd' : 'inherit',
+                          '&:hover': { bgcolor: selectedRows.has(submission.id) ? '#bbdefb' : '#f5f5f5' }
+                        }}
+                      >
+                        <TableCell sx={{ width: '50px' }}>
+                          <Checkbox
+                            checked={selectedRows.has(submission.id)}
+                            onChange={() => handleSelectRow(submission.id)}
+                          />
+                        </TableCell>
+                        <TableCell>{submission.studentId}</TableCell>
+                        <TableCell>{submission.firstName}</TableCell>
+                        <TableCell>{submission.lastName}</TableCell>
+                        <TableCell>{submission.faculty}</TableCell>
+                        <TableCell>{submission.department}</TableCell>
+                        <TableCell>{submission.email}</TableCell>
+                        <TableCell>{submission.session}</TableCell>
+                        <TableCell>
+                          {new Date(submission.createdAt?.toDate?.() || submission.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Tooltip title="Edit">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditSubmission(submission)}
+                              sx={{ color: '#1976d2' }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteSubmission(submission)}
+                              sx={{ color: '#d32f2f' }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            {/* Pagination */}
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredSubmissions.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{ bgcolor: '#f5f5f5', borderTop: '1px solid #e0e0e0' }}
+            />
+          </>
         )}
 
         {/* Edit Submission Dialog */}

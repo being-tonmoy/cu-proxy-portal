@@ -3,21 +3,71 @@ import { authenticateUser } from '../services/firestoreService';
 
 export const AuthContext = createContext();
 
+// Session timeout in milliseconds (12 hours)
+const SESSION_TIMEOUT = 12 * 60 * 60 * 1000;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessionTimer, setSessionTimer] = useState(null);
 
   // Check for logged-in user on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
+  // Setup session timeout on user login/mount
+  useEffect(() => {
+    if (user) {
+      // Clear existing timer
+      if (sessionTimer) {
+        clearTimeout(sessionTimer);
+      }
+
+      // Set new session timeout
+      const timer = setTimeout(() => {
+        console.log('Session expired after 12 hours');
+        logoutDueToTimeout();
+      }, SESSION_TIMEOUT);
+
+      setSessionTimer(timer);
+
+      // Return cleanup function
+      return () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      };
+    }
+  }, [user]);
+
+  const logoutDueToTimeout = () => {
+    setUser(null);
+    setError(null);
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('sessionStartTime');
+  };
+
   const checkAuthStatus = () => {
     try {
       const storedUser = localStorage.getItem('adminUser');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      const sessionStartTime = localStorage.getItem('sessionStartTime');
+
+      if (storedUser && sessionStartTime) {
+        const now = Date.now();
+        const sessionAge = now - parseInt(sessionStartTime);
+
+        // Check if session has expired (12 hours)
+        if (sessionAge > SESSION_TIMEOUT) {
+          // Session expired
+          localStorage.removeItem('adminUser');
+          localStorage.removeItem('sessionStartTime');
+          setUser(null);
+        } else {
+          // Session still valid
+          setUser(JSON.parse(storedUser));
+        }
       }
     } catch (err) {
       console.error('Error checking auth status:', err);
@@ -35,7 +85,9 @@ export const AuthProvider = ({ children }) => {
       
       if (authenticatedUser) {
         setUser(authenticatedUser);
+        // Store user and session start time
         localStorage.setItem('adminUser', JSON.stringify(authenticatedUser));
+        localStorage.setItem('sessionStartTime', Date.now().toString());
         return { success: true };
       } else {
         setError('Invalid email or password');
@@ -54,7 +106,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setError(null);
     localStorage.removeItem('adminUser');
-  }, []);
+    localStorage.removeItem('sessionStartTime');
+    if (sessionTimer) {
+      clearTimeout(sessionTimer);
+    }
+  }, [sessionTimer]);
 
   const value = {
     user,

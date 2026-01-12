@@ -114,17 +114,6 @@ const LoginPage = () => {
               </Alert>
             )}
 
-            {/* Info Alert */}
-            <Alert severity="info" sx={{ mb: 4, borderRadius: '8px' }}>
-              <Typography variant="body2" sx={{ fontSize: '13px' }}>
-                <strong>Demo Credentials:</strong>
-                <br />
-                Email: <code>superadmin@cu.ac.bd</code>
-                <br />
-                Password: <code>super@2026</code>
-              </Typography>
-            </Alert>
-
             {/* Login Form */}
             <form onSubmit={handleLogin}>
               <TextField
