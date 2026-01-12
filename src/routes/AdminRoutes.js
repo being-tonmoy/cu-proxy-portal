@@ -5,6 +5,7 @@ import AdminDashboard from '../pages/AdminDashboard';
 import AdminSetup from '../pages/AdminSetup';
 import UserManagement from '../pages/UserManagement';
 import SubmissionManagement from '../pages/SubmissionManagement';
+import AdminComplaints from '../pages/AdminComplaints';
 
 const adminRoutes = [
   <Route
@@ -40,6 +41,15 @@ const adminRoutes = [
     element={
       <ProtectedRoute requiredRole="admin">
         <SubmissionManagement />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="complaints"
+    path="/admin/complaints"
+    element={
+      <ProtectedRoute requiredRole="admin">
+        <AdminComplaints />
       </ProtectedRoute>
     }
   />,

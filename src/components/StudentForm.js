@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
@@ -8,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import Swal from 'sweetalert2';
 import { useLanguage } from '../hooks/useLanguage';
 import { 
@@ -29,6 +31,7 @@ import TermsAndConditions from './StudentForm/TermsAndConditions';
 
 const StudentForm = () => {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -460,7 +463,8 @@ const StudentForm = () => {
                 gap: { xs: 2, sm: 3 },
                 justifyContent: 'center',
                 mt: 6,
-                flexDirection: { xs: 'column', sm: 'row' }
+                flexDirection: { xs: 'column', sm: 'row' },
+                flexWrap: 'wrap'
               }}
             >
               <Button
@@ -512,6 +516,117 @@ const StudentForm = () => {
                 }}
               >
                 {t('cancel')}
+              </Button>
+            </Box>
+
+            {/* Contact Information */}
+            <Box sx={{ textAlign: 'center', my: 4 }}>
+              <Typography variant="body2" sx={{ color: '#666', fontStyle: 'italic' }}>
+                In case of any queries, feel free to contact at{' '}
+                <Typography
+                  component="a"
+                  href="mailto:tonmoy.ict@cu.ac.bd"
+                  sx={{
+                    color: '#001f3f',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      color: '#ff6f00'
+                    }
+                  }}
+                >
+                  tonmoy.ict@cu.ac.bd
+                </Typography>
+              </Typography>
+            </Box>
+
+            {/* Divider Section for Complaints */}
+            <Box 
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                my: 6
+              }}
+            >
+              <Box 
+                sx={{
+                  flex: 1,
+                  height: '2px',
+                  background: 'linear-gradient(to right, transparent, #ff6f00, transparent)',
+                  borderRadius: '1px'
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#ff6f00',
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
+                  fontSize: { xs: '12px', sm: '14px' },
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}
+              >
+                Having Issues?
+              </Typography>
+              <Box 
+                sx={{
+                  flex: 1,
+                  height: '2px',
+                  background: 'linear-gradient(to left, transparent, #ff6f00, transparent)',
+                  borderRadius: '1px'
+                }}
+              />
+            </Box>
+
+            {/* Complaints Section Introduction */}
+            <Box sx={{ mb: 4, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#666',
+                  fontSize: { xs: '13px', sm: '15px' },
+                  lineHeight: 1.6
+                }}
+              >
+                If you're facing any issues or have complaints, you can report them here. We will respond to your concerns as soon as possible.
+              </Typography>
+            </Box>
+
+            {/* Report Issue Button */}
+            <Box 
+              sx={{
+                display: 'flex',
+                justifyContent: 'center'
+              }}
+            >
+              <Button
+                type="button"
+                variant="contained"
+                startIcon={<AssignmentIcon />}
+                onClick={() => navigate('/complaints')}
+                disabled={loading}
+                sx={{
+                  background: 'linear-gradient(135deg, #ff6f00 0%, #e65100 100%)',
+                  px: { xs: 6, sm: 8 },
+                  py: { xs: 1.2, sm: 1.5 },
+                  fontSize: { xs: '14px', sm: '16px' },
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: '0 8px 20px rgba(255, 111, 0, 0.3)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:disabled': {
+                    background: '#ccc'
+                  }
+                }}
+              >
+                Report Issue / Track Complaints
               </Button>
             </Box>
           </form>

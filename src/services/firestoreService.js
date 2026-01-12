@@ -550,3 +550,105 @@ export const updateSubmission = async (studentId, faculty, department, updateDat
     throw error;
   }
 };
+/**
+ * Get all complaints for a specific student
+ */
+export const getComplaintsByStudentId = async (studentId) => {
+  try {
+    const complaintsRef = collection(db, 'complaints');
+    const q = query(
+      complaintsRef,
+      where('studentId', '==', studentId)
+    );
+    
+    const snapshot = await getDocs(q);
+    const complaints = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return complaints;
+  } catch (error) {
+    console.error('Error fetching complaints:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a specific complaint by ID
+ */
+export const getComplaintById = async (complaintId) => {
+  try {
+    const complaintDoc = await getDoc(doc(db, 'complaints', complaintId));
+    
+    if (complaintDoc.exists()) {
+      return {
+        id: complaintDoc.id,
+        ...complaintDoc.data()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching complaint:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add a message to a complaint
+ */
+export const addMessageToComplaint = async (complaintId, message, sentBy = 'student') => {
+  try {
+    const complaintRef = doc(db, 'complaints', complaintId);
+    
+    const newMessage = {
+      text: message,
+      sentBy: sentBy,
+      timestamp: serverTimestamp(),
+      isAdmin: sentBy === 'admin'
+    };
+
+    // Update complaint with new message and metadata
+    await updateDoc(complaintRef, {
+      messages: [...(await getComplaintById(complaintId)).messages, newMessage],
+      lastUpdatedAt: serverTimestamp(),
+      lastTextBy: sentBy
+    });
+
+    return {
+      success: true,
+      message: 'Message added successfully'
+    };
+  } catch (error) {
+    console.error('Error adding message:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update complaint status
+ */
+export const updateComplaintStatus = async (complaintId, status) => {
+  try {
+    const validStatuses = ['open', 'in-progress', 'resolved', 'closed'];
+    
+    if (!validStatuses.includes(status)) {
+      throw new Error('Invalid status');
+    }
+
+    const complaintRef = doc(db, 'complaints', complaintId);
+    await updateDoc(complaintRef, {
+      status: status,
+      lastUpdatedAt: serverTimestamp()
+    });
+
+    return {
+      success: true,
+      message: 'Complaint status updated successfully'
+    };
+  } catch (error) {
+    console.error('Error updating complaint status:', error);
+    throw error;
+  }
+};

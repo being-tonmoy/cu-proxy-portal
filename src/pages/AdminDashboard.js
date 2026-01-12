@@ -20,11 +20,14 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
+import WarningIcon from '@mui/icons-material/Warning';
 import Swal from 'sweetalert2';
 import { Bar, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip as ChartTooltip, Legend, Filler } from 'chart.js';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllSubmissions } from '../services/firestoreService';
+import { db } from '../utils/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, ChartTooltip, Legend, Filler);
 
@@ -32,11 +35,13 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [submissions, setSubmissions] = useState([]);
+  const [complaints, setComplaints] = useState([]);
   const [facultySortConfig, setFacultySortConfig] = useState({ key: 'count', direction: 'desc' });
   const [departmentSortConfig, setDepartmentSortConfig] = useState({ key: 'count', direction: 'desc' });
 
   useEffect(() => {
     loadSubmissions();
+    loadComplaints();
   }, []);
 
   const loadSubmissions = async () => {
@@ -51,6 +56,20 @@ const AdminDashboard = () => {
         text: 'Failed to load submissions',
         confirmButtonColor: '#001f3f'
       });
+    }
+  };
+
+  const loadComplaints = async () => {
+    try {
+      const complaintsCollection = collection(db, 'complaints');
+      const snapshot = await getDocs(complaintsCollection);
+      const complaintsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setComplaints(complaintsData);
+    } catch (error) {
+      console.error('Error loading complaints:', error);
     }
   };
 
@@ -196,6 +215,13 @@ const AdminDashboard = () => {
             </Button>
             <Button
               variant="outlined"
+              onClick={() => navigate('/admin/complaints')}
+              sx={{ borderColor: '#ff6f00', color: '#ff6f00', fontWeight: 'bold' }}
+            >
+              Manage Complaints
+            </Button>
+            <Button
+              variant="outlined"
               startIcon={<LogoutIcon />}
               onClick={handleLogout}
               sx={{ borderColor: '#d32f2f', color: '#d32f2f', fontWeight: 'bold' }}
@@ -274,6 +300,24 @@ const AdminDashboard = () => {
                     </Typography>
                   </Box>
                   <PeopleIcon sx={{ fontSize: 50, opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="rgba(255,255,255,0.7)" gutterBottom>
+                      Open Issues
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {complaints.filter(c => c.status === 'open').length}
+                    </Typography>
+                  </Box>
+                  <WarningIcon sx={{ fontSize: 50, opacity: 0.3 }} />
                 </Box>
               </CardContent>
             </Card>
